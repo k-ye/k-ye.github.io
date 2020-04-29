@@ -1,0 +1,49 @@
+title: A Bit Log
+description: Ye Kuang's personal technical blog
+author: Ye Kuang
+github: https://github.com/k-ye
+about: Fun is coding.
+# google_analytics: UA-XXXXXXXX-Y
+
+enableTags: true
+tagarray: []
+
+# collections:
+#   project:
+#     output: true
+#     permalink: /project/:path/
+
+social:
+    - icon: fa-github
+      link: "https://github.com/k-ye"
+    - icon: fa-linkedin
+      link: "https://www.linkedin.com/in/kuangye/"
+
+share:
+  # twitter_username: github.io
+  # fb_appid: 1749788565247320
+
+urls:
+    - text: Categories
+      url: /categories
+    - text: About Me
+      url: /about/
+    # - text: My Projects
+    #   url: /projects/
+    
+url: "https://k-ye.github.io"
+baseurl: ""
+paginate: 20
+per_page: 20
+paginate_path: "/page/:num/"
+markdown: kramdown
+gems:
+  - jekyll-paginate
+  - jekyll-gist
+
+compress_html:
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
+  ignore:
+    envs: ['development']
