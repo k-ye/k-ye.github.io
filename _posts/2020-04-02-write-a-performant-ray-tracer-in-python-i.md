@@ -3,7 +3,7 @@ layout: post
 title:  "Write a Performant Ray Tracer in \"Python\" (I)"
 categories: [taichi, python]
 mdname: "2020-04-02-write-a-performant-ray-tracer-in-python-i"
-img_dir: "/static/img/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
+img_dir: "/static/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
 ---
 
 # Introduction
@@ -166,6 +166,7 @@ Before more coding, we need some preliminary knowledge on how ray tracing works.
 
 ### Think in the box
 
+Now let's set up the scene. First of all, we are seeing inside a box
 ### Oh shoot
 
 [^1]: This is only true on GPU, since on CPU, the number of threads we can launch is usually much less than the size of the tensor. On the other hand, CPU cores are much more powerful and can finish the computation per coordinate much faster.
