@@ -2,8 +2,8 @@ title: A Bit Log
 description: Ye Kuang's personal technical blog
 author: Ye Kuang
 github: https://github.com/k-ye
-about: Fun is coding.
-# google_analytics: UA-XXXXXXXX-Y
+about: Fun is coding
+google_analytics: UA-164930046-1
 
 enableTags: true
 tagarray: []
