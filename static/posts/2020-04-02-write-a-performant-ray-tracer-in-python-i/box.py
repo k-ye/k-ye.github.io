@@ -68,7 +68,7 @@ def intersect_scene(ray_o, ray_d):
     if 0 < cur_dist < closest:
         closest = cur_dist
         normal = pnorm
-        color, mat = gray, mat_lambertian
+        color, mat = gray, mat_light
     # far
     pnorm = ti.Vector([0.0, 0.0, 1.0])
     cur_dist = ray_plane_intersect(ray_o, ray_d, ti.Vector([0.0, 0.0, 0.0]),

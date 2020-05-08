@@ -3,7 +3,7 @@ layout: post
 title:  "Write a Performant Ray Tracer in \"Python\" (I)"
 categories: [taichi, python]
 mdname: "2020-04-02-write-a-performant-ray-tracer-in-python-i"
-img_dir: "/static/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
+res_dir: "/static/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
 ---
 
 # Introduction
@@ -12,7 +12,7 @@ img_dir: "/static/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
 
 In this series of articles, we are going to write a ray tracer that renders a [Cornell Box](https://en.wikipedia.org/wiki/Cornell_box) scene (well, not an authentic one). Eventually, you should be able to get something like this on your screen:
 
-![]({{page.img_dir}}/cornell_box.png)
+![]({{page.res_dir}}/cornell_box.png)
 
 # Background
 
@@ -22,7 +22,7 @@ I quoted Python in the title because I lied. No, we are not using Python, but a 
 
 In another word, Taichi offers the simplicity of Python and the performace of the hardware, the best of both.
 
-Before you shake your head and mumble "I don't want to learn a new language just for that", don't worry. I assure you that there is nothing new about the language itself. You will be writing authentic Python, and can view Taichi just as a powerful library. In fact, here's how you'd want to install it (Note that Taichi is only available since `Python 3.6+`):
+Before you shake your head and mumble "I don't want to learn a new language just for that", don't worry. I assure you that there is nothing new about the language itself. You will be writing native Python, and can view Taichi just as a powerful library. In fact, here's how you'd want to install it (Note that Taichi is only available since `Python 3.6+`):
 
 ```bash
 python3 -m pip install taichi
@@ -77,11 +77,9 @@ One more thing I should mention before we start. Here is a list of some awesome 
 
 Enough said, let's get started!
 
-# Write a Basic Ray Tracer
+# Hello Taichi
 
-### Hello Taichi
-
-Before we can do anything, we need to be able to draw pixels on the screen. A screen of pixels is nothing more than a 2D array of `RGB` values, i.e. each element in the array is a tuple of three floating points. Note that the RGB component in Taichi is between `0.0` and `1.0`, not `[0, 0xff]`.
+Before we can do anything, we need to be able to draw pixels on the screen. A screen of pixels is nothing more than a 2D array of `RGB` values, i.e. each element in the array is a tuple of three floating points. Note that the RGB component in Taichi is between `0.0` and `1.0`, not `0` to `0xff`.
 
 ```py
 import taichi as ti
@@ -145,7 +143,7 @@ Now that we have covered the essential part, the rest should be relatively easy 
 gui = ti.GUI('Cornell Box', res)
 ```
 
-This just creates a drawable GUI window titled `Cornell Box`, with resolution `800x800`. Taichi comes with a tiny GUI system that is portable on all major OS, including Windows, Linux and Mac.
+This just creates a drawable GUI window titled `Cornell Box`, with resolution `800x800`. Taichi comes with a tiny GUI system that is portable on all the major OSes, including Windows, Linux and Mac.
 
 ```py
 for i in range(50000):
@@ -155,32 +153,32 @@ for i in range(50000):
     gui.show()
 ```
 
-As we can see, calling a Taichi kernel is no different from calling a Python function. For the first call, Taichi JIT compiles `render()` to low-level machine code, and runs it directly on GPU/CPU. Subsequent calls will skip the compilation step, since the compiled kernel will be cached by the Taichi runtime.
+Calling a Taichi kernel is no different from a regular Python function. For the first call, Taichi JIT compiles `render()` to the low-level machine code, and runs it directly on GPU/CPU. Subsequent calls will skip the compilation step, since the compiled kernel will be cached by the Taichi runtime.
 
-Once the execution completes, we need to transfer the data back. Here comes another nice thing: Taichi has already provided a few helper methods so that it can easily interact with `numpy` and `pytorch`. In our case, the Taichi tensor is converted into a `numpy` array called `img`, which is then passed into `gui` to set the color of each pixel. At last, we call `gui.show()` to update the window. Note that although `for i in range(50000):` might seem redundant, we will soon need it when doing ray tracing.
+Once the execution completes, we need to transfer the data back. Here comes another nice thing: Taichi has already provided a few helper methods so that it can easily interact with `numpy` and `pytorch`. In our case, the Taichi tensor is converted into a `numpy` array called `img`, which is then passed into `gui` to set the color of each pixel. At last, we call `gui.show()` to update the window. Although `for i in range(50000):` might seem redundant, we will soon need it when doing ray tracing.
 
 Let's name the file `box.py` and run it with `python3 box.py`. If you see the window below, congratulations! You have successfully run your first Taichi program.
 
-![]({{page.img_dir}}/hello_taichi.png)
+![]({{page.res_dir}}/hello_taichi.png)
 
-### Ray tracing in 5 minutes
+# Ray Tracing in 10 Minutes
 
 Before any more coding, we need some preliminary knowledge on how the ray tracing algorithm works. If you are already an expert on this topic, feel free to jump to [the next section](#think-in-the-box). Otherwise, I will give a brief introduction of the algorithm. In the meantime, I'd still recommend you to read on [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html). There is no way I could do a better job than that article.
 
-We need a coordinate space to precisely describe the scene. We will be using a *right-hand coordinate frame*. That is, the plane of your screen defines the `x` and `y` axes, where the `x` axis points to the right, and the `y` axis upward. The `z` axis points outwards from the screen towards you. In the CG terminology, this coordinate frame is called the *world space*.
+We need a coordinate space to precisely describe the scene. We will be using a *right-hand coordinate frame*. That is, the plane of your screen defines the `x` and `y` axes, where the `x` axis points to the right, and the `y` axis upward. The `z` axis points outwards from the screen towards you. This coordinate frame is referred to as the *world space*.
 
 If you think of the GUI as a window in the world space that sits in front of the scene, the ray tracer will send a ray from a fixed position through every pixel on that window. That fixed position is where the (virtual) *camera* is located in the world space. The color of the pixel is then that of the closest object hit by the ray. 
 
-![]({{page.img_dir}}/coordinate.jpg)
+![]({{page.res_dir}}/coordinate.jpg)
 
-We call the process *sampling* for sending a ray through a pixel and tracing it inside the scene. It is usually not enough to sample the pixels just once, as the output image will be very noisy. A simple mitigation (with solid statistics foundation!) is to sample multiple times, then sum up the color to compute the mean. Of course, it would be meaningless if all the samplings trace exactly the same path. We shall see shortly that randomness will be added to the sampling process at multiple places. (I mean, why bother calling it sampling if there was no randomness involved?)
+We call the process *sampling* for sending a ray through a pixel and tracing it inside the scene. It is usually not enough to sample the pixels just once, as the output image will be very noisy. A simple mitigation (with [solid statistics foundation](https://en.wikipedia.org/wiki/Monte_Carlo_method)!) is to sample multiple times, then sum up the color to compute the mean. Of course, it would be meaningless if all the samplings trace exactly the same path. We shall see shortly that randomness will be added to the sampling process at multiple places. (I mean, why bother calling it sampling if there was no randomness involved?)
 
-If you connect the camera position with the four corners of the window, you will get a *frustum*. Only those objects located within this frustum volume will be rendered on the screen. One problem is that, we only know the width to height ratio (the *aspect ratio*) of the cross section rectangle, which is the same as that of the GUI window, but not its area. Consequently, we don't know the volume of the frustum.
+If you connect the camera position with the four corners of the window, you will get a *frustum*. Only those objects located within this frustum volume will be rendered on the screen. One problem is that, we only know the width to height ratio (the *aspect ratio*) of the cross section rectangle, which is the same as that of the GUI window, but not its area. Consequently, we don't know the frustum's volume.
 
-One solution is to define the coordinates of the window's four corners in the world space. However, there is a simpler approach. We add a new paramter to the camera system, called the *field of view (fov)*. Intuitively, this measures how "wide"  the frustum opens up vertically. The figure below shows that, although the cross section rectangles of the two frustums have the same aspect ratio, because the top frustum has a larger fov ($$\theta \gt \theta^\prime$$), it can cover a larger chunk of the scene.
+One solution is to define the coordinates of the window's four corners in the world space. However, there is a simpler approach. We add a new paramter to the camera system, called the *field of view (fov)*. Informally speaking, this measures how wide the frustum opens up vertically. The figure below shows that, although the cross section rectangles of the two frustums have the same aspect ratio, because the top frustum has a larger fov ($$\theta \gt \theta^\prime$$), it can cover a larger chunk of the scene.
 
 
-![]({{page.img_dir}}/fov.jpg)
+![]({{page.res_dir}}/fov.jpg)
 
 
 We can ask a few questions about the ray tracing technique now:
@@ -197,9 +195,9 @@ $$
 
 A point that is closer to the camera, or more generally, the ray origin $$\boldsymbol{o}$$, will have a smaller $$t$$.
 
-To find out the closest hitting point, we start with $$ t = +\infty $$, iterate over every object in the scene and check for ray-object intersection. In code, `t` is initialized to an extremetely large number, e.g. `1e10`. If the ray does hit an object, $$t$$ is updated, but only if the intersection results in a smaller $$t$$. How exactly the intersection point is computed, if there is any, depends on the *gemoetry* of that object. Fortunately, it is relatively easy to write out the intersection equations for all the geometris we will be using in this example. Concretely, there are three types of geometries: plane, axis aligned rectangle and sphere. The difference between a plane and an axis aligned rectangle is that the later is bounded.
+To find out the closest hitting point, we start with $$ t = +\infty $$, iterate over every object in the scene and check for ray-object intersection. In code, `t` is initialized to an extremetely large number, e.g. `1e10`. If the ray does hit an object, $$t$$ is updated, but only if the intersection results in a smaller $$t$$. How exactly the intersection point is computed, if there is any, depends on the *gemoetry* of that object. Fortunately, it is relatively easy to write out the intersection equations for all the geometris we will be using in this example. Concretely, there are three types of geometries: plane, axis aligned rectangle and sphere. The difference between a plane and a rectangle is that the later is bounded.
 
-For the third question, it is really about how to compute the color of *a* point on *a* given object, with *a* given ray. To be able to answer this, we need to introduce another concept, the *material*.
+For the third question, it is really about how to compute the color of *a* point on *a* given object, with *a* given ray. To be able to answer this, we need to introduce another concept, *material*.
 
 Material is the key to determine an object's appearance, including its color, its textural feeling, etc. Is it matte? Is it metallic? Is it transparent? ... As the ray intersects with an object, we will also record the material associated with that object.
 
@@ -207,11 +205,11 @@ Let me take a step back from the materials, and give a broad overview of how the
 
 Once the ray from the camera hits an object, we have two choices here. The first option is to compute the color using the light sources information, and end the sampling here. This is effectively the *local illumination* shading model, because it only takes into account the interaction between the object and the light sources.
 
-![]({{page.img_dir}}/local_il.jpg)
+![]({{page.res_dir}}/local_il.jpg)
 
-Alternatively, we record the color and the material information, then shoot a new ray from the intersection point, and continue the sampling process. The direction of this new ray depends on the hitting material, which could be either probablistic or deterministic. When the new ray hits another object, record the color, shoot a third ray, and so on so forth. To prevent it from running forever, we can put a cap on how many times the ray can bounce.
+Alternatively, we record the color and the material information, then shoot a new ray from the intersection point, and continue the sampling process. The direction of this new ray depends on the hitting material, which could be either probablistic or deterministic. When the new ray hits another object, record the color 'n material, shoot a third ray, and so on so forth. To prevent it from running forever, we can put a cap on how many times the ray can bounce, called the *maximum ray-tracing depth*.
 
-The accumulated color information is called the *throughput*. In the beginning, it is set to `1.0` for all its RGB components. Each time the ray hits an object, throughput is multiplied with the color of that point. In the end, throughput is attenuated by the colors of all the intersected points along the path:
+The accumulated color information is called the *throughput*. In the beginning, it is set to `1.0` for all its RGB components. Each time the ray hits a regular object (i.e. not a light source), throughput is multiplied with the color of that point. In the end, throughput is attenuated by the colors of all the intersected points along the path:
 
 $$
 \begin{aligned}
@@ -219,26 +217,28 @@ $$
 \end{aligned}
 $$
 
-This shading model is called the *global illumination*, and is performed recursively (which can be turned into an iterative process, thankfully). The color sampled for a pixel therefore accounts for the illumnination from both the light sources directly, and the indirect reflection of the lights through other objects that are not emissive by themselves. As a result, we can get a much more realistic image with very vivid effects, such as soft shadows and caustics.
+If the ray manages to hit a light source before reaching the maximum depth, the sampled color is the product of throughput and the light source color. Otherwise, the entire path being traced was  not lit, and the sampled color is just pure black.
 
-![]({{page.img_dir}}/global_il.jpg)
+This shading model is called *global illumination*, and is performed recursively (which can be turned into an iterative process, thankfully). The color sampled for a pixel therefore accounts for the illumnination from both the light sources directly, and the indirect reflection of the lights through other objects that are not emissive by themselves. As a result, we can get a much more realistic image with very vivid effects, such as soft shadows and caustics.
+
+![]({{page.res_dir}}/global_il.jpg)
 
 This completes the ray tracing algorithm in its entirety. Hopefully, by now you would recognize its conciseness, and be amazed at its efficacy. However, the devil is in the detail. We now turn back to the materials to understand how to choose a new ray direction. 
 
 There are two materials used in this post: *lambertian* and *emissive*.
 
-Lambertian is probably the simplest reflective material that models perfect diffusion. It scatters the incident ray to all the direction above the hitting surface with equal probability. Lambertian material doesn't emit lights on its own, but its intrinsic color will be multiplied to the accumulated color during ray tracing.
+Lambertian is probably the simplest reflective material that models perfect diffusion. It scatters the incident ray to all the direction above the hitting surface with equal probability. Lambertian material doesn't emit lights on its own, but its does have an intrinsic color.
 
-![]({{page.img_dir}}/lambertian.jpg)
+![]({{page.res_dir}}/lambertian.jpg)
 
 Emissive material, as its name indicates, emits light. An object with such a material is called a *light source*, and has the capability of affecting the appearance of other objects.  Emissive material is actually simpler than lambertian, because it is not reflective. When the ray hits a light source, we can terminate the sampling earlier without spawning a new ray. This might not be physically sound, but it simplifies the ray tracing algorithm while the result still looks reasonably correct, since the light color is usually the dominant factor.
 
 There are other reflective materials, e.g. the glass sphere on the right side of the cover image. However, we will address these more advanced materials in a later post.
 
 
-### Think in the box
+# Think in the Box
 
-We need some helpers from `math` and `numpy`, let's import them first.
+We need some helpers from `math` and `numpy`, go import them:
 
 ```py
 # import taichi as ti
@@ -246,7 +246,7 @@ import numpy as np
 import math
 ```
 
-We also need to define a few constants.
+We also need to define a few constants:
 
 ```py
 # ...
@@ -270,14 +270,14 @@ light_color = ti.Vector([0.9, 0.85, 0.7])
 ```
 
 * `eps`: A tiny fraction to help resolve the numerical errors in certain cases.
-* `max_ray_depth`: The maxinum times a ray can bounce.
-* `mat_.*`: These are the material enums. `mat_none` is a special mark to indicate that the ray hits nothing.
+* `max_ray_depth`: The maxinum depth a ray can trace inside the scene.
+* `mat_*`: These are the material enums. `mat_none` is a special mark to indicate that the ray hits nothing.
 
 Other constants should be self explanatory.
 
 Since we are observing within a box, we need to construct a total of five sides of the box. A side can be represented using an infinite plane. How do we describe that mathematically?
 
-![]({{page.img_dir}}/box_sides.jpg)
+![]({{page.res_dir}}/box_sides.jpg)
 
 If we are given a point on an infinite plane, $$\boldsymbol{x}$$, and its normal, $$\boldsymbol{n}$$, then for any point $$\boldsymbol{p}$$ on that plane, we know that $$\boldsymbol{p} - \boldsymbol{x}$$ must be perpendicular to $$\boldsymbol{n}$$:
 
@@ -312,7 +312,7 @@ def ray_plane_intersect(pos, d, pt_on_plane, norm):
 
 Here, we have seen a new Taichi decorator, `@ti.func`. This one is handled in a similar way as `@ti.kernel` is, in that the decorated function is compiled to native machine code, and executed without the Python interpreter. Because of this, functions decorated with `@ti.func` can only be called from another function that is decorated by either `@ti.kernel` or `@ti.func`, but *not* from the Python scope.
 
-Most of the procedure inside `ray_plane_intersect()` is a direct translation of the equations above. Note that there is a possibility where the ray direction $$\boldsymbol{d}$$ is in parallel with the plane. In another word, it is perpendicular to the plane normal $$\boldsymbol{n}$$. We compute $$t$$ only if that is not the case, i.e. $$\boldsymbol{d} \cdot \boldsymbol{n} \ge \epsilon$$.
+Most of the procedure inside `ray_plane_intersect()` is a direct translation of the equations above. Note that there is a possibility where the ray direction $$\boldsymbol{d}$$ is in parallel with the plane. In another word, it is perpendicular to the plane normal $$\boldsymbol{n}$$. We compute $$t$$ only if that is *not* the case, i.e. $$\boldsymbol{d} \cdot \boldsymbol{n} \ge \epsilon$$.
 
 In the previous section, we have explained that when shooting a ray, we need to find out the closest point it hits. Let's define such a function:
 
@@ -338,7 +338,7 @@ def intersect_scene(ray_o, ray_d):
 
 As a start, we have only defined the left side plane of the box. This plane passes point `[-1.1, 0.0, 0.0]` and has a normal of `[1.0, 0.0, 0.0]`. In another word, this is a $$yz$$ plane pointing to the $$+x$$ direction, and intersecting the $$x$$ axis at `-1.1`. Its material is lambertian (`mat_lambertian`), with a red color (`RGB = [0.65, 0.05, 0.05]`).
 
-![]({{page.img_dir}}/left_plane.jpg)
+![]({{page.res_dir}}/left_plane.jpg)
 
 We can add the right, top, bottom and far side planes in a similar way. Below shows the complete function definition:
 
@@ -448,9 +448,9 @@ The properties of each side are summarized in the following table.
   </tr>
 </table></div>
 
-### Oh shoot
+# Oh Shoot
 
-We have done a great amount of work so far, yet the main `render()` kernel remains unchanged. If you run `box.py` now, it still renders that mundane gradient color view.
+We have done a great amount of work now, yet the main `render()` kernel remains unchanged. If you run `box.py` now, it still renders that mundane gradient color view.
 
 *"Oh shoot! How am I supposed to see my hard work?"*
 
@@ -477,11 +477,11 @@ The first ray always starts at the camera position. The ray direction deserves m
 
 Ignoring the randomness (`ti.random()`) for now, `v` is in range `[0, res[1])`, hence the range of this whole expression is `[-fov, fov)`.
 
-For the x component, we see that `fov` is multiplied with `aspect_ratio`. Because `u` is in `[0, res[0])`, the entire expression's range is `[-fov * aspect_ratio, fov * aspect_ratio)`. Recall that `aspect_ratio = res[0] / res[1]`, so this ratio makes the viewport adapt to the GUI resolution, i.e. the shape of the view frustum cross section is proportional to that of the GUI window. This isn't particular useful in our example, since we have created a square window. However, you can try a heterogenous resolution, e.g. `(1000, 800)`, and verify that the the scene covers a wider angle horizontally.
+For the x component, we see that `fov` is multiplied with `aspect_ratio`. Because `u` is in `[0, res[0])`, the entire expression's range is `[-fov * aspect_ratio, fov * aspect_ratio)`. Recall that `aspect_ratio = res[0] / res[1]`, so this ratio makes the viewport adapt to the GUI resolution, i.e. the cross section shape of the view frustum is proportional to that of the GUI window. This isn't particular useful in our example, since we have created a square window. However, you can try a heterogeneous resolution, e.g. `(1000, 800)`, and verify that the the scene covers a wider angle horizontally.
 
-The randomness is introduced for *antialiasing*. Every time a pixel is sampled, we jitter the first ray's direction a bit, so that it can hit at a slightly different location. The pixel's final color is then the average of all the samples, and gradually converges as the sampling iteration continues. This is a very common approach in ray tracing for removing some artifacts (e.g. jagged edges, as shown in [this example](https://ray-tracing-conept.blogspot.com/2015/01/super-sampling-drt.html)).
+The randomness is introduced for *antialiasing*. Every time a pixel is sampled, we jitter the first ray's direction a bit, so that it can hit at a slightly different location. The pixel's final color is then the average of all the samples, and gradually converges as the sampling process continues. This is a very common approach in ray tracing for removing some artifacts (e.g. jagged edges, as shown in [this example](https://ray-tracing-conept.blogspot.com/2015/01/super-sampling-drt.html)).
 
-![]({{page.img_dir}}/antialiasing.jpg)
+![]({{page.res_dir}}/antialiasing.jpg)
 
 We need a few variables to hold the states of the ray tracing process.
 
@@ -494,7 +494,7 @@ We need a few variables to hold the states of the ray tracing process.
         depth = 0
 ```
 
-Let's revisit the ray tracing mechanism: Until we have reached `max_ray_depth`, we shoot one ray from the previous hitting point (or the camera position, if this is the first tray). If the ray hits nothing, then we can terminate the loop earlier and leave the pixel color untouched. If it hits a light source, we will still jump out of the loop. But before that, we multiply the throughput by the light source color to get the final pixel color for this round of sampling. Otherwise, according to the settings so far, it means the ray has hit one of the box surfaces, which is a lambertian material. In this situation, we update the throughtput and randomly pick a new ray direction for the next iteration.
+Let's revisit the algorithm: Until we have reached a light source or `max_ray_depth`, we shoot one ray from the previous hitting point (or the camera position, if this is the first tray). If the ray hits nothing, then we can terminate the loop earlier and leave the pixel color untouched. If it hits a light source, we will still jump out of the loop. But before that, we multiply the throughput by the light source color to get the final pixel color for this round of sampling. Otherwise, according to the settings so far, it means that the ray has hit one of the box planes, which has a lambertian material. In this situation, we update the throughtput and randomly pick a new ray direction for the next iteration.
 
 ```py
         # ...
@@ -516,15 +516,11 @@ Let's revisit the ray tracing mechanism: Until we have reached `max_ray_depth`, 
         color_buffer[u, v] += px_color
 ```
 
-Most of the code should be self explanatory by now, we still need to address a few details here.
+There is one detail here that deserves some explanation. Note how we compoute the new ray origin, `ray_pos`. We have shifted the hit position by a tiny offset along the new direction, i.e. `eps * ray_dir`. Without this shift, because of the numerical precision errors, sometimes the new ray would immediately intersect with the surface it has just hit, the so called *self-intersection*. This could result in very noisy artifacts where the objects are covered with small black dots. [Here](https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows) is an example to illustrate that artifact.
 
-1. If `mat == mat_none`, `px_color` will not be set. From a physics point of view, the entire path we have traced didn't get a chance to hit any light source, hence the pixel is not lit in this sample.
-2. If `mat == mat_light`, this means the ray has hit a light source. `px_color` will be attenuated by the color of both the light source and the objects being hit along the path, i.e. `throughput * light_color`.
-3. Note how we compoute the new ray origin, `ray_pos`. We have shifted the hit position by a tiny offset along the new direction, i.e. `eps * ray_dir`. Without this shift, because of the numerical precision errors, sometimes the new ray would immediately intersect with the surface it has just hit, the so called *self-intersection*. This could result in very noisy artifacts where the objects are covered with small black dots. [Here](https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows) is an example to illustrate that artifact.
+![]({{page.res_dir}}/self_intersect.jpg)
 
-![]({{page.img_dir}}/self_intersect.jpg)
-
-How to define  `sample_ray_dir()`? We've briefly explained that a new ray direction should be picked randomly over the unit hemisphere above the hit surface. (Again, this claim is correct only for the lambertian materials. In the later posts we will handle specular and transmissive materials, where the new ray direction cannot be chosen arbitrarily.) One strategy for doing this is to choose a random point within a unit sphere that is centered at $$\boldsymbol{p} + \boldsymbol{n}$$, where $$\boldsymbol{p}$$ is the hit point and $$\boldsymbol{n}$$ is the unit surface normal.
+How to define  `sample_ray_dir()`? We've briefly explained that a new ray direction should be picked randomly above the hit surface. (Again, this claim is only correct only for lambertian. In the later posts we will add specular and transmissive materials, where the new ray direction cannot be chosen arbitrarily.) One strategy for doing this is to choose a random point within a unit sphere that is centered at $$\boldsymbol{p} + \boldsymbol{n}$$, where $$\boldsymbol{p}$$ is the hit point and $$\boldsymbol{n}$$ is the unit surface normal.
 
 Let's start with choosing a random point within a unit sphere centered at the origin $$\boldsymbol{\emptyset}$$.
 
@@ -610,7 +606,7 @@ def render():
 
 Let's give it a shot, `python3 box.py`:
 
-![]({{page.img_dir}}/all_dark.png)
+![]({{page.res_dir}}/all_dark.png)
 
 *"Whaaaa?"*
 
@@ -632,11 +628,11 @@ def intersect_scene(ray_o, ray_d):
 
 If we run the example again:
 
-![]({{page.img_dir}}/final.png)
+![]({{page.res_dir}}/final.png)
 
 *Voila!* Our hard working has finally paid off.
 
-I'd like to end the post here, because this should be enough for one with no CG experience to digest for a while. If you have followed this far, thank you for your time and patience! In the next post, I will be adding the rest of the components to the scene, including a rectangular light source, and two spheres with apparently different materials. If you are yearning for more, think about how to check for ray-rectangle and/or ray-sphere intersections, and try extending the example for yourself :)
+I'd like to end the post here, because this should be enough for one with no CG experience to digest for a while. If you have followed this far, thank you for your time and patience! In the next post, I will be adding the rest of the components to the scene, including a rectangular light source, and two spheres with apparently different materials. For any problem you might encounter, [here]({{page.res_dir}}/box.py) is my implementaion. If you are yearning for more, think about how to check for ray-rectangle and/or ray-sphere intersections, and try extending the example for yourself :)
 
 ---
 
