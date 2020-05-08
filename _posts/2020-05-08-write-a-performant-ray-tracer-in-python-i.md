@@ -2,8 +2,7 @@
 layout: post
 title:  "Write a Performant Ray Tracer in \"Python\" (I)"
 categories: [taichi, python]
-mdname: "2020-04-02-write-a-performant-ray-tracer-in-python-i"
-res_dir: "/static/posts/2020-04-02-write-a-performant-ray-tracer-in-python-i"
+res_dir: "/static/posts/2020-05-08-write-a-performant-ray-tracer-in-python-i"
 ---
 
 # Introduction
