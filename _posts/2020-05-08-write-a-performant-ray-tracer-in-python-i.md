@@ -210,11 +210,9 @@ Alternatively, we record the color and the material information, then shoot a ne
 
 The accumulated color information is called the *throughput*. In the beginning, it is set to `1.0` for all its RGB components. Each time the ray hits a regular object (i.e. not a light source), throughput is multiplied with the color of that point. In the end, throughput is attenuated by the colors of all the intersected points along the path:
 
-$$
-\begin{aligned}
+$$\begin{aligned}
   throughput = \prod_{i=1}^n color_{i}
-\end{aligned}
-$$
+\end{aligned}$$
 
 If the ray manages to hit a light source before reaching the maximum depth, the sampled color is the product of throughput and the light source color. Otherwise, the entire path being traced was  not lit, and the sampled color is just pure black.
 
@@ -280,22 +278,15 @@ Since we are observing within a box, we need to construct a total of five sides 
 
 If we are given a point on an infinite plane, $$\boldsymbol{x}$$, and its normal, $$\boldsymbol{n}$$, then for any point $$\boldsymbol{p}$$ on that plane, we know that $$\boldsymbol{p} - \boldsymbol{x}$$ must be perpendicular to $$\boldsymbol{n}$$:
 
-$$
-\begin{aligned}
+$$\begin{aligned}
 (\boldsymbol{p} - \boldsymbol{x}) \cdot \boldsymbol{n} = \boldsymbol{0}  
-\end{aligned}
-$$
+\end{aligned}$$
 
 Since $$\boldsymbol{p}$$ is also along the ray, i.e. $$\boldsymbol{p}(t) = \boldsymbol{o} + \boldsymbol{d}\cdot t$$, we have:
 
-$$
-\begin{aligned}
-(\boldsymbol{p}(t) - \boldsymbol{x}) \cdot \boldsymbol{n} & = \boldsymbol{0} \\
-(\boldsymbol{o} + \boldsymbol{d} \cdot t - \boldsymbol{x}) \cdot \boldsymbol{n} & = \boldsymbol{0} \\
-(\boldsymbol{d} \cdot \boldsymbol{n}) \cdot t & = (\boldsymbol{x} - \boldsymbol{o}) \cdot \boldsymbol{n} \\
-t & = \frac{(\boldsymbol{x} - \boldsymbol{o}) \cdot \boldsymbol{n}}{\boldsymbol{d} \cdot \boldsymbol{n}}
-\end{aligned}
-$$
+$$\begin{aligned}
+(\boldsymbol{p}(t) - \boldsymbol{x}) \cdot \boldsymbol{n} = \boldsymbol{0} \\ (\boldsymbol{o} + \boldsymbol{d} \cdot t - \boldsymbol{x}) \cdot \boldsymbol{n} = \boldsymbol{0} \\ (\boldsymbol{d} \cdot \boldsymbol{n}) \cdot t = (\boldsymbol{x} - \boldsymbol{o}) \cdot \boldsymbol{n} \\ t = \frac{(\boldsymbol{x} - \boldsymbol{o}) \cdot \boldsymbol{n}}{\boldsymbol{d} \cdot \boldsymbol{n}}
+\end{aligned}$$
 
 We can now define a function to check if a ray would intersect with a given plane:
 
