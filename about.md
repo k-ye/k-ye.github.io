@@ -10,4 +10,4 @@ a research literature is finally put into code.
 
 I started at Google in Mountain View. Before that, I got my master degree from Harvard and B.S. from Tsinghua University.
 
-I breathe C++ (since C++11, of course), not so much for Python (although I write it a lot). I have no idea how HTML5/CSS/JS works.
+I live and breathe C++ (since C++11, of course), not so much for Python (although I write it a lot). I have no idea how HTML5/CSS/JS works.
