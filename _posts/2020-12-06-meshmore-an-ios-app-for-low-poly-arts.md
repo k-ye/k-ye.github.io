@@ -27,7 +27,7 @@ Fast forwarding to 2018 Q4, I once again felt the urge to create low-poly arts. 
 ![]({{page.res_dir}}/ny-sol.jpg)
 ![]({{page.res_dir}}/horse-mbp.jpg)
 
-The core data structure I used was called the *half-edge mesh*. It is a very efficient data structure to support operations like travesing the adjacent elements in the mesh, edge splitting and collapsing, etc. Some of the materials that I found useful during the development are listed below.
+The core data structure in MeshMore was the *half-edge mesh*. This is a very efficient data structure to support operations like travesing the adjacent elements in the mesh, edge splitting and collapsing, etc. Some of the materials that I found useful during the development are listed below.
 
 * [https://462cmu.github.io/asst2_meshedit](https://462cmu.github.io/asst2_meshedit)
 * [https://kaba.hilvi.org/homepage/blog/halfedge/halfedge.htm](https://kaba.hilvi.org/homepage/blog/halfedge/halfedge.htm): Unfortunately the website doesn't seem to be updated for a while. So if you click on it, your browser is probably gonna give you a big warning. But the material helped clarify a lot of the concepts and implementation details.
